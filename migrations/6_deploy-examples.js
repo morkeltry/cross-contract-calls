@@ -12,13 +12,13 @@ module.exports = async function(deployer, network, accounts) {
   await deployer.deploy(Poll, {from:owner});
   await deployer.deploy(Validator, {from:owner});
   Poll.at(Poll.address).then(poll => {
-    poll["setValidator1"](Validator.address).then(() => {
+    // poll["setValidator1"](Validator.address).then(() => {
       Validator.at(Validator.address).then(validator => {
         console.log(`We have Validator at ${Validator.address}`);
         validator["setPollAddress"](Poll.address).then(() => {
           console.log("That's a done :)");
         });
       });
-    });
+    // });
   });
 };

@@ -21,10 +21,14 @@ are not needed, but were originally used to provide availablility for multiple c
 
 ```
 truffle compile
+```
+if you have nmot already compiled.
+Then always:
+```
 ganache-cli
 truffle migrate
 ```
-`ganache` would be run automatically, running the cli explicilty in its own terminal allows you to mointor addresses and transactions.
+`ganache` can be run automatically, running the cli explicilty in its own terminal allows you to mointor addresses and transactions.
 
 ```
 cd app
@@ -33,5 +37,5 @@ npm run start
 opens the React app in the browser.
 
 #### Troubleshooting
-If the app chokes on on network constants being undefined, check that your `network` in `truffle-config.js` (if set) and `providerUrl` in `app/src/Web3/adminPanel.js` match your ganache URL.
-Alternatively, this may be a migration problem (eg due to async errors) which can fail silently. After fixing any possbile problems, make sure to use ```truffle migrate --reset``` to explicitly rebuild.
+If the app chokes on on network constants being undefined, check that your `network` in `truffle-config.js` (if set) and `providerUrl` in `app/src/Web3/adminPanel.js` match your ganache URL (which is running, right? You do have a blockchain running?)
+Alternatively, this may be a migration problem (eg due to async errors) which can fail silently during migration or remigration. Look in the console for whether all, or only some, artifacts are missing the correct network. After fixing any possbile problems, make sure to use ```truffle migrate --reset``` to explicitly rebuild.

@@ -5858,10 +5858,16 @@
       "links": {},
       "address": "0x060517FcBC9a210B9228E3558A963f3f7a0c0eCB",
       "transactionHash": "0x545df05068c8d71ae348aa64a97bc90f34ed43e85e9949e2a6c9d13248240913"
+    },
+    "1591094846222": {
+      "events": {},
+      "links": {},
+      "address": "0x3d15C0bba272801bB7dEF430234c8C4B9f9979E2",
+      "transactionHash": "0x474ce39c133a7b7444a82801034e22df91e79b97eb8e03c0385980f2b803dca8"
     }
   },
   "schemaVersion": "3.2.0",
-  "updatedAt": "2020-06-02T00:35:11.305Z",
+  "updatedAt": "2020-06-02T15:30:12.685Z",
   "networkType": "ethereum",
   "devdoc": {
     "author": "Arvind Kalra (github.com/arvindkalra) and Pranav Singhal (github.com/pranav-singhal)",

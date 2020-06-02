@@ -6,10 +6,16 @@ import Button from "react-bootstrap/Button";
 
 import { callTransaction, sendTransaction } from "../../Web3/adminPanel";
 
+import "./functionForm.css";
+import "./segregatedPanel.scss";
+
+const timeString = date => `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+
 const FunctionForm = props => {
   const [disabled, setDisabled] = useState(false);
   const [args, setArgs] = useState({});
-  const [response, setResponse] = useState("");
+  const [response, setBareResponse] = useState(["",""]);
+  const setResponse = (resp=> { console.log(`${timeString(new Date())}Setting: ${typeof resp} ${resp}`); setBareResponse([timeString(new Date()),resp]); })
   const [error, setError] = useState("");
   const [link, setLink] = useState("");
   useEffect(() => {
@@ -140,9 +146,9 @@ const FunctionForm = props => {
           })}
           <Row>
             <Col md={{ span: 9, offset: 0 }}>
-              {response.length !== 0 ? (
+              {response[0].length !== 0 ? (
                 <div className={"response"}>
-                  RESPONSE :&nbsp;&nbsp;&nbsp;&nbsp;{response}
+                  RESPONSE :&nbsp;&nbsp;&nbsp;&nbsp;{response.join('- ')}
                 </div>
               ) : null}
               {error.length !== 0 ? (

@@ -21,10 +21,8 @@ contract Poll {
     address selfAddy ;
 
     constructor () public /* is PollCommunity */ {
-
         validators[1] = address(0xA145493CC19b0BC6C5a2cA86e9BA38BB435E3F5b);
         validatorNames[1] = "Mutual Agreement";
-
         selfAddy = address(this);
     }
 
@@ -67,8 +65,10 @@ contract Poll {
         return selfAddy;
     }
 
+    event ValidatorSet();
     function setValidator1 (address newAddy) public returns (bool) {
         validators[1] = newAddy;
+        emit ValidatorSet();
         return true;
     }
 
@@ -76,8 +76,20 @@ contract Poll {
         return validators[1];
     }
 
+    function setValidator1Name (string memory newName) public returns (bool) {
+        validatorNames[1] = newName;
+        emit ValidatorSet();
+        return true;
+    }
+
+    function getValidator1Name () public view returns (string memory) {
+        return validatorNames[1];
+    }
+
+    event RetrievedDataCache(string, uint256, bytes32[]);
     function dumpDataCache (bytes32 poll32, string memory fnName, uint8 vt) public returns (string memory, uint256, bytes32[] memory) {
         bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
+        emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
         return ("Poll context:", notes, dataCache[hash]);
     }
 
@@ -247,6 +259,8 @@ contract Poll {
         // calls fallback function of contract at validatorAddress, passing 4 byte encoded function name to it to select method.
     // NB in sol 0.6 + fallback cannot return anything
     // NB future optimisation : we are not using the functionality of string here, since string must have come from a bytes32
+    event CrossContractValidateBegin();
+    event CrossContractValidateEnd();
     function crossContractValidateCall (address _validator, bytes4 fnNameHash, string memory poll, uint8 vt, bytes32[] memory reveal)  public returns (bytes32[] memory) {
         address validator = _validator;
 
@@ -254,6 +268,7 @@ contract Poll {
         // NB 32b offset as space for validator contract address! (assumes no tight packing in calldata)
         // TODO: this will need to be chucked at the other end, unless you want to do the subtraction in assembly :/
 
+        emit CrossContractValidateBegin();
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize)
@@ -264,8 +279,10 @@ contract Poll {
             case 0 { revert(ptr, size) }
             default { return(ptr, size) }
         }
+        emit CrossContractValidateEnd();
     }
 
+    event CrossContractValidateReturned(bool);
     function callValidator_MututalAgreement(string memory _poll, string memory data) public returns (bool) {
         uint8 vType = 1;
         assert (stringsEqual(validatorNames[vType], "Mutual Agreement"));
@@ -274,5 +291,10 @@ contract Poll {
         // reveal parameter is unused in mutual agreement
         validate(validators[vType], _poll, bytes32(0) );
         crossContractValidateCall(validators[vType], encodeFunctionName("validate") , _poll, vType, empty );
+        //TODO: get return value!
+
+        emit CrossContractValidateReturned(false);
+
+
     }
 }

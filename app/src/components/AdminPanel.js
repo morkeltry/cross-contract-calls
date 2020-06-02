@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {connectToWeb3, getImplementationFunctions, switchTo} from "../Web3/adminPanel";
+// import {connectToWeb3, getImplementationFunctions, getImplementationEvents, setEventWatchers, switchTo} from "../Web3/adminPanel";
+import {connectToWeb3, getImplementationFunctions, getImplementationEvents, switchTo} from "../Web3/adminPanel";
 import SegregatedPanel from "./segregatedPanel/SegregatedPanel";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
@@ -13,12 +14,14 @@ import {Form} from "react-bootstrap";
 
 const readFormArray = [];
 const writeFormArray = [];
+const eventsObj = {};
 const readPanelViewBoolean = true;
 const writePanelViewBoolean = false;
 
 const AdminPanel = props => {
   const [readForm, setReadForm] = useState(readFormArray);
   const [writeForm, setWriteForm] = useState(writeFormArray);
+  const [events, setEvents] = useState(eventsObj);
   const [readPanelView, setReadPanelView] = useState(readPanelViewBoolean);
   const [writePanelView, setWritePanelView] = useState(writePanelViewBoolean);
   const [loadingStatus, setLoadingStatus] = useState(false);
@@ -39,6 +42,14 @@ const AdminPanel = props => {
       setNextAddresses([addressObj.PollAddress, addressObj.ValidatorAddress])
       return true
     }).then(() => {
+      getImplementationEvents({ setWatchers:true })
+        .then (foundEvents=> {
+          console.log(foundEvents);
+          foundEvents.forEach( event=> {
+            eventsObj[event.eventName]={signature : event.signature};
+          });
+        setEvents(eventsObj);
+      });
       return getImplementationFunctions()
 
     }).then(implementationFunctions => {

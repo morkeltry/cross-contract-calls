@@ -5,9 +5,14 @@ import TokenV1Artifacts from "../contracts/Token_V1.json";
 import PollArtifacts from "../contracts/Poll.json";
 import ValidatorArtifacts from "../contracts/MutualAgreement.json";
 
-let providerUrl = "http://127.0.0.1:8545";
+let providerUrl = "ws://127.0.0.1:8545";
+let web3;
 
-const web3 = new Web3(new Web3.providers.HttpProvider(providerUrl));
+// NB Drizzle Requires 'ws://' not anything else
+// if (providerUrl.startsWith('ws'))
+//   web3 = new Web3(new Web3.providers.HttpProvider(providerUrl))
+// else
+  web3 = new Web3(new Web3.providers.WebsocketProvider(providerUrl));
 if (!web3.eth.net)
   console.log(`Did not get web3.eth.net from ${providerUrl}. Maybe check the port number?`);
 
@@ -140,13 +145,55 @@ export function getImplementationAddress() {
 
 
 
+export async function getImplementationEvents( options={ setWatchers:false } ) {
+    // returns the list of events that are in the latest version of the contract
+    let rv = [];
+    const { setWatchers } = options;
+    console.log(IMPLEMENTATION_ABI);
+    console.log(IMPLEMENTATION_INSTANCE.events);
+    IMPLEMENTATION_ABI.forEach(ele => {
+        if (ele.type === "event") {
+            console.log(`Found event`, ele);
+            let objectToBeAppended = {};
+            objectToBeAppended["eventName"] = ele["name"];
+            let argsObject = [];
 
+            ele.inputs.forEach(input => {
+                argsObject.push(`${input.name} (${input.type})`);
+            });
+            if (setWatchers)
+              setEventWatcher(ele["name"]);
+
+            objectToBeAppended["signature"] = ele["signature"];
+
+            rv.push(objectToBeAppended);
+        }
+    });
+    return rv;
+}
+
+export async function setEventWatcher(event, action) {
+    action = action || ((err, result)=> {
+      if (err) {
+        console.log(err)
+        return;
+      }
+      // console.log(result.args._value);
+      console.log(result);
+      console.log('returning:',result.returnValues);      
+    });
+    console.log(`Will set watch on ${event} with ${action.toString()}`);
+    console.log(`IMPLEMENTATION_INSTANCE.events[${event}]()`,IMPLEMENTATION_INSTANCE.events[event]);
+    IMPLEMENTATION_INSTANCE.events[event](action);
+};
 
 export async function getImplementationFunctions() {
     // returns the list of functions that are in the latest version of the contract
     let rv = [];
     IMPLEMENTATION_ABI.forEach(ele => {
+  console.log(ele.type);
         if (ele.type === "function") {
+            // console.log(`Found function`, ele);
             let objectToBeAppended = {};
             objectToBeAppended["funcName"] = ele["name"];
             let argsObject = [];
@@ -154,6 +201,7 @@ export async function getImplementationFunctions() {
             ele.inputs.forEach(input => {
                 argsObject.push(`${input.name} (${input.type})`);
             });
+            objectToBeAppended.outputs = ele.outputs.map(e=>e.type);
 
             objectToBeAppended["isView"] = ele.stateMutability === "view";
             objectToBeAppended["args"] = argsObject;
@@ -235,10 +283,11 @@ export function callTransaction(functionName, args) {
         checkFunctionFormatting(functionName, args)
             .then(({rv, output}) => {
 
-                console.log(IMPLEMENTATION_INSTANCE);
+                console.log(`Call to:`,IMPLEMENTATION_INSTANCE);
                 IMPLEMENTATION_INSTANCE.methods[functionName](...rv)
                     .call({from: OWN_ADDRESS})
                     .then(result => {
+                      console.log(typeof result, result);
                         if (output && output["type"].substr(0, 4) === "uint") {
                             resolve(parseInt(result.valueOf()));
                             // handleExponentialNumber(result.valueOf(), resolve);
@@ -259,9 +308,11 @@ export function sendTransaction(functionName, args) {
     return new Promise((resolve, reject) => {
         checkFunctionFormatting(functionName, args)
             .then(({rv, output}) => {
+                console.log(`Send to: ${IMPLEMENTATION_INSTANCE}`);
                 IMPLEMENTATION_INSTANCE.methods[functionName](...rv)
                     .send({from: OWN_ADDRESS})
                     .then(result => {
+                        console.log(typeof result, result);
                         resolve(result);
                     })
                     .catch(reject);

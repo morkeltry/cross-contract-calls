@@ -1417,10 +1417,30 @@
       "links": {},
       "address": "0x5415f37e8e03CDb0d985add54c5eCc346d7FF021",
       "transactionHash": "0x9c114188c05c1fb04a2d435f00277e99a3d056bcf690c199782cc4a8fba82720"
+    },
+    "1591094846222": {
+      "events": {
+        "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "implementation",
+              "type": "address"
+            }
+          ],
+          "name": "Upgraded",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xf997265D92d5eB6321fF8edaf92445d4578b0147",
+      "transactionHash": "0xc5b2ee3148614e35bc4081a6942f30ffd38296cff3a779b7fc82c70658ee1dae"
     }
   },
   "schemaVersion": "3.2.0",
-  "updatedAt": "2020-06-02T00:35:11.301Z",
+  "updatedAt": "2020-06-02T15:30:12.680Z",
   "networkType": "ethereum",
   "devdoc": {
     "author": "Arvind Kalra (github.com/arvindkalra) and Pranav Singhal (github.com/pranav-singhal)",
