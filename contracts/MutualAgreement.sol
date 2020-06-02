@@ -69,9 +69,10 @@ contract MutualAgreement {
 
     }
 
-
+    event pollAddressSet();
     function setPollAddress (address newAddy) public returns (bool) {
         pollAddress = newAddy;
+        emit pollAddressSet();
         return true;
     }
 
@@ -79,19 +80,21 @@ contract MutualAgreement {
         return pollAddress;
     }
 
-    function dumpDataCache (bytes32 poll32, string memory fnName, uint8 vt) public returns (string memory, uint256, bytes32[] memory) {
+    // event RetrievedDataCache(string, uint256, bytes32[]);
+    function dumpDataCache (bytes32 poll32, string memory fnName, uint8 vt) public view returns (string memory, uint256, bytes32[] memory) {
         bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
+        // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
         return ("Validator context", notes, dataCache[hash]);
     }
 
-    function serialiseStakers(string calldata _poll, uint8 validationType) external view returns (address[] memory) {
+    function serialiseStakers(string calldata _poll, uint8 validationType) external pure returns (address[] memory) {
         // return something which will make it obvious that you have accidentally delegated this context!
         address[] memory ret = new address[](4);
         (ret[0], ret[1], ret[2], ret[3]) = (address(5), address(0), address(5), address(0));
         return ret;
     }
 
-    function serialiseProofs(string calldata _poll, uint8 validationType) external view returns (address[] memory) {
+    function serialiseProofs(string calldata _poll, uint8 validationType) external pure returns (address[] memory) {
         // return something which will make it obvious that you have accidentally delegated this context!
         address[] memory ret = new address[](4);
         (ret[0], ret[1], ret[2], ret[3]) = (address(0), address(5), address(0), address(5));
@@ -140,7 +143,7 @@ contract MutualAgreement {
 
     //     for (uint i = 0; i < 32; i++) {
     //         out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
-    //     }
+    //     }~/randomCode/truffletings/proxyBox
     //     return out;
     // }
 
@@ -157,7 +160,7 @@ contract MutualAgreement {
         return string(bytesArray);
     }
 
-    function bytes32ArrayToString (bytes32[] memory data)  public returns (string memory ) {
+    function bytes32ArrayToString (bytes32[] memory data) public pure returns (string memory ) {
         bytes memory bytesString = new bytes(data.length * 32);
         uint urlLength;
         uint i=0;
@@ -204,9 +207,12 @@ contract MutualAgreement {
     // NB future better: just get the ABI of the finished Poll conmtract, and use that!
     // NB in sol 0.6 + fallback cannot return anything
     // NB future optimisation : we are not using the functionality of string here, since string must have come from a bytes32
+    event CrossContractValidateBegin();
+    event CrossContractValidateEnd();
     function crossContractCall (bytes4 fnNameHash, string  memory poll, uint256 valid, uint8 vt) public returns (bytes32[] memory) {
     address pollContract = pollAddress;
 
+        emit CrossContractValidateBegin();
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize)
@@ -217,6 +223,7 @@ contract MutualAgreement {
             case 0 { revert(ptr, size) }
             default { return(ptr, size) }
         }
+        emit CrossContractValidateEnd();
     }
 
 

@@ -86,10 +86,10 @@ contract Poll {
         return validatorNames[1];
     }
 
-    event RetrievedDataCache(string, uint256, bytes32[]);
-    function dumpDataCache (bytes32 poll32, string memory fnName, uint8 vt) public returns (string memory, uint256, bytes32[] memory) {
+    // event RetrievedDataCache(string, uint256, bytes32[]);
+    function dumpDataCache (bytes32 poll32, string memory fnName, uint8 vt) public view returns (string memory, uint256, bytes32[] memory) {
         bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
-        emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
+        // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
         return ("Poll context:", notes, dataCache[hash]);
     }
 
@@ -222,7 +222,7 @@ contract Poll {
     }
 
     // temporary functionality to repoint to simple example, eg splitToAddresses
-    function unpackData (string memory packed) internal returns (bytes32[] memory result) {
+    function unpackData (string memory packed) internal pure returns (bytes32[] memory result) {
         //NB relying on splitToAddresses doing string splitting here, as we rely on .length - available only on fixed size array.
         address[] memory asAddresses = splitToAddresses(packed.toSlice()) ;
         uint8 i = uint8(asAddresses.length) ;

@@ -3820,12 +3820,12 @@
         }
       },
       "links": {},
-      "address": "0x0A233eC370Ccf9DFa6253a024085761a458432dA",
-      "transactionHash": "0xbfb4780cfdfc02d466f8d1a0bfdd4390fa14e00ccf64c0f53f705ee421baa9e4"
+      "address": "0xa5b1Da59040dAB4C346B4F1ACFb9cAc3959A1e1A",
+      "transactionHash": "0xe8718a191f23f40062639444d199eea4250c22f62ce6348b9a41cede4e6815e7"
     }
   },
   "schemaVersion": "3.2.0",
-  "updatedAt": "2020-06-02T15:30:11.596Z",
+  "updatedAt": "2020-06-02T19:05:00.658Z",
   "networkType": "ethereum",
   "devdoc": {
     "author": "Arvind Kalra (github.com/arvindkalra) and Pranav Singhal (github.com/pranav-singhal)*",

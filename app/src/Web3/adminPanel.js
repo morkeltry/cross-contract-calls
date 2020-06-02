@@ -180,7 +180,7 @@ export async function setEventWatcher(event, action) {
       }
       // console.log(result.args._value);
       console.log(result);
-      console.log('returning:',result.returnValues);      
+      console.log('returning:',result.returnValues);
     });
     console.log(`Will set watch on ${event} with ${action.toString()}`);
     console.log(`IMPLEMENTATION_INSTANCE.events[${event}]()`,IMPLEMENTATION_INSTANCE.events[event]);
@@ -203,7 +203,7 @@ export async function getImplementationFunctions() {
             });
             objectToBeAppended.outputs = ele.outputs.map(e=>e.type);
 
-            objectToBeAppended["isView"] = ele.stateMutability === "view";
+            objectToBeAppended["mutates"] = ele.stateMutability === "nonpayable" || ele.stateMutability === "payable";
             objectToBeAppended["args"] = argsObject;
 
             rv.push(objectToBeAppended);

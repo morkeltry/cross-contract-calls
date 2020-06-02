@@ -55,10 +55,10 @@ const AdminPanel = props => {
     }).then(implementationFunctions => {
       console.log(implementationFunctions);
       implementationFunctions.forEach(func => {
-        if (func.isView) {
-          tempRead.push(func);
-        } else {
+        if (func.mutates) {
           tempWrite.push(func);
+        } else {
+          tempRead.push(func);
         }
 
       });
