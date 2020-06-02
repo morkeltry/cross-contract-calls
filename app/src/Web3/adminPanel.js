@@ -269,10 +269,11 @@ function checkWithABI(currentFunc, functionName, args, resolve, reject) {
             }
 
             rv.push(callValue);
-        } else if (inputType === "string" || inputType.substr(0, 5) === "bytes") {
+        } else if ((inputType === "string" || inputType.substr(0, 5) === "bytes") && !inputType.endsWith(']')) {
             // Nothing to do here bz everything is acceptable
             rv.push(callValue);
-        }
+        } else if (inputType.endsWith(']'))
+            rv.push(JSON.parse(callValue));   //Hacky! will work only for exact format ["v4l1dD4t4",0xetc], will not sanity check contents, etc..
     });
     resolve({rv, output: currentFunc.outputs[0]});
 }
@@ -283,7 +284,7 @@ export function callTransaction(functionName, args) {
         checkFunctionFormatting(functionName, args)
             .then(({rv, output}) => {
 
-                console.log(`Call to:`,IMPLEMENTATION_INSTANCE);
+                console.log(`Call to:`,IMPLEMENTATION_INSTANCE,args);
                 IMPLEMENTATION_INSTANCE.methods[functionName](...rv)
                     .call({from: OWN_ADDRESS})
                     .then(result => {

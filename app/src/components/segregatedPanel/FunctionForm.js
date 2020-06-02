@@ -43,6 +43,7 @@ const FunctionForm = props => {
         Object.keys(args).forEach(ele => {
           objToBePassed[ele.split(" ")[0]] = args[ele];
         });
+        console.log(objToBePassed);
 
         callTransaction(functionName, objToBePassed)
           .then(response => {
