@@ -15,7 +15,6 @@ const FunctionForm = props => {
   const [disabled, setDisabled] = useState(false);
   const [args, setArgs] = useState({});
   const [response, setBareResponse] = useState(["",""]);
-  const setResponse = (resp=> { console.log(`${timeString(new Date())}Setting: ${typeof resp} ${resp}`); setBareResponse([timeString(new Date()),resp]); })
   const [error, setError] = useState("");
   const [link, setLink] = useState("");
   useEffect(() => {
@@ -23,13 +22,18 @@ const FunctionForm = props => {
     setArgs(props.funcArgs);
   }, [props.funcArgs, disabled]);
 
+  const setResponse = resp=> {
+    console.log(`${timeString(new Date())}Setting: ${typeof resp}:`,resp);
+    setBareResponse([timeString(new Date()),resp]);
+  }
+
   const callContract = functionName => {
     return new Promise((resolve, reject) => {
       if (!props.functionHasArguments) {
         callTransaction(functionName, {})
           .then(response => {
 
-            setResponse(response.toString());
+            setResponse( (typeof response === "object") ? response : response.toString());
             setError("");
             resolve();
           })
@@ -48,7 +52,7 @@ const FunctionForm = props => {
         callTransaction(functionName, objToBePassed)
           .then(response => {
 
-            setResponse(response.toString());
+            setResponse( (typeof response === "object") ? response : response.toString());
             setError("");
             resolve();
           })
@@ -89,7 +93,11 @@ const FunctionForm = props => {
           })
           .catch(err => {
             setLink("");
-            setError(err.toString());
+            console.log(err);
+            if (err.toString() === "TypeError: param.map is not a function")
+              setError(err.toString() + "\nhint - make sure array input is JSON.parse-able!")
+            else
+              setError(err.toString());
             resolve(err);
           });
       }
@@ -149,7 +157,7 @@ const FunctionForm = props => {
             <Col md={{ span: 9, offset: 0 }}>
               {response[0].length !== 0 ? (
                 <div className={"response"}>
-                  RESPONSE :&nbsp;&nbsp;&nbsp;&nbsp;{response.join('- ')}
+                  RESPONSE :&nbsp;&nbsp;&nbsp;&nbsp;{response[0]} - {typeof response[1] === 'object' ? JSON.stringify(Object.values(response[1])) : response }
                 </div>
               ) : null}
               {error.length !== 0 ? (

@@ -275,26 +275,30 @@ function checkWithABI(currentFunc, functionName, args, resolve, reject) {
         } else if (inputType.endsWith(']'))
             rv.push(JSON.parse(callValue));   //Hacky! will work only for exact format ["v4l1dD4t4",0xetc], will not sanity check contents, etc..
     });
-    resolve({rv, output: currentFunc.outputs[0]});
+    resolve({rv, outputs: currentFunc.outputs });
 }
 
 
 export function callTransaction(functionName, args) {
     return new Promise((resolve, reject) => {
         checkFunctionFormatting(functionName, args)
-            .then(({rv, output}) => {
+            .then(({rv, outputs}) => {
 
                 console.log(`Call to:`,IMPLEMENTATION_INSTANCE,args);
                 IMPLEMENTATION_INSTANCE.methods[functionName](...rv)
                     .call({from: OWN_ADDRESS})
                     .then(result => {
                       console.log(typeof result, result);
-                        if (output && output["type"].substr(0, 4) === "uint") {
-                            resolve(parseInt(result.valueOf()));
-                            // handleExponentialNumber(result.valueOf(), resolve);
-                        } else {
-                            resolve(result);
-                        }
+                        outputs = outputs.forEach ((output,idx)=> {
+                          console.log('output',output);
+                          if (output && output["type"].substr(0, 4) === "uint") {
+                            if (typeof result==="object")
+                              result[idx] = (parseInt(result[idx].valueOf()));
+                            else if (typeof result==="object")
+                              result = (parseInt(result[idx].valueOf()));
+                            // handleExponentialNumber(result[idx].valueOf(), resolve);
+                        }});
+                        resolve(result);
                     })
                     .catch(reject);
 
@@ -309,7 +313,8 @@ export function sendTransaction(functionName, args) {
     return new Promise((resolve, reject) => {
         checkFunctionFormatting(functionName, args)
             .then(({rv, output}) => {
-                console.log(`Send to: ${IMPLEMENTATION_INSTANCE}`);
+                console.log(`Send to:`,IMPLEMENTATION_INSTANCE);
+                console.log('got:',{rv, output});
                 IMPLEMENTATION_INSTANCE.methods[functionName](...rv)
                     .send({from: OWN_ADDRESS})
                     .then(result => {
@@ -326,7 +331,9 @@ export function sendTransaction(functionName, args) {
 
 export function switchTo(address) {
     return new Promise((resolve, reject) => {
+      console.log('Got to A');
         ProxyInstance.methods.upgradeTo(address).send({from: OWN_ADDRESS}).then(result => {
+          console.log('Got to B');
           resolve(result)
 
         })

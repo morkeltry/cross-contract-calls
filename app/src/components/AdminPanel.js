@@ -8,15 +8,16 @@ import Row from "react-bootstrap/Row";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import Col from "react-bootstrap/Col";
-import "../App.scss";
 import Loading from "./Loading";
 import {Form} from "react-bootstrap";
+import "../App.scss";
+
 
 const readFormArray = [];
 const writeFormArray = [];
 const eventsObj = {};
-const readPanelViewBoolean = true;
-const writePanelViewBoolean = false;
+const readPanelViewBoolean = false;
+const writePanelViewBoolean = true;
 
 const AdminPanel = props => {
   const [readForm, setReadForm] = useState(readFormArray);
@@ -118,10 +119,16 @@ const AdminPanel = props => {
             </Nav>
             <Nav className={"ml-auto"}>
               <Nav.Link>
-                <Button onClick={readClick}>Read Panel</Button>
+                <Button
+                  onClick={readClick}
+                  className={ readPanelView? "pressed" : "" }
+                >Read Panel</Button>
               </Nav.Link>
               <Nav.Link>
-                <Button onClick={writeClick}>Write Panel</Button>
+                <Button
+                  onClick={writeClick}
+                  className={ writePanelView? "pressed" : "" }
+                >Write Panel</Button>
               </Nav.Link>
             </Nav>
         </Navbar>

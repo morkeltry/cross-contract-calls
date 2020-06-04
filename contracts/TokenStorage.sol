@@ -15,8 +15,17 @@ contract TokenStorage  is Ownable{
     // Access Modifier for Storage contract
     address internal _registryContract;
 
+    uint8 ok;
+    uint8 result;
+    mapping (uint => uint) myMap;
+    // dataCache must occupy the same slot as in Poll contract, ie first slot, slot 0.
+    mapping (bytes32 => bytes32[]) dataCache;
+    // resultsCache must occupy the same slot as in Poll contract, ie second slot, slot 1.
+    mapping (bytes32 => bool) resultsCache;
+
     constructor() public {
         _owner = msg.sender;
+        ok = 99;
     }
 
     function setProxyContract(address proxyContract) onlyOwner public{

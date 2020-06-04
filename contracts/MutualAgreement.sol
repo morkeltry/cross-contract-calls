@@ -27,11 +27,18 @@ import "./stringCasting.sol";
 
 /* Lunchcoin validator contract - mutual agreement */
 contract MutualAgreement {
+    address owner;  // is set by TokenStorage.
+    uint8 ok;
+    uint8 result;
+    mapping (uint => uint) myMap;
+
     // dataCache must occupy the same slot as in Poll contract, ie first slot, slot 0.
     mapping (bytes32 => bytes32[]) dataCache;
     // resultsCache must occupy the same slot as in Poll contract, ie second slot, slot 1.
     mapping (bytes32 => bool) resultsCache;
+
     uint256 notes = 130;
+    int8 constructed = -1;
 
     using strings for *;
     using stringcast for string;
@@ -47,26 +54,67 @@ contract MutualAgreement {
         bool senderIsPresent;
     }
 
+    function () payable external {
+        _fallback();
+    }
 
-    function() external payable {
-        // NB sol 0.6+ better syntax for calldata arrays : https://solidity.readthedocs.io/en/v0.6.0/types.html#array-slices
+    // function() external payable {
+    //     // NB sol 0.6+ better syntax for calldata arrays : https://solidity.readthedocs.io/en/v0.6.0/types.html#array-slices
+    //     bytes memory input = msg.data;
+    //
+    //     // TODO: This is V.0 accepting a string (really a bytes32) of EXACTLY 32 bytes, eg a doodle poll without the https:// ;)
+    //     bytes32 __ownAdress;  // NB assuming 32b rather than 20b for calldata loose packing. Remember to get rid of this line when optimising!
+    //     bytes memory usefulData;
+    //     bytes32 poll32;
+    //     bytes memory __reveal;
+    //     // demo result! (we don;t need more than bool really ;)
+    //     uint256 valid = 7331;
+    //
+    //     (__ownAdress, usefulData) = (bytesSplit32(input));
+    //     (poll32, __reveal) = (bytesSplit32(usefulData));
+    //
+    //     // NB other validators will need to additionally retrieve reveal data from msg.data
+    //     bytes32[] memory stakers = crossContractCall (encodeFunctionName("serialiseStakers"), bytes32ToString(poll32), valid, vType);
+    //     bytes32[] memory proofs = crossContractCall (encodeFunctionName("serialiseProofs"), bytes32ToString(poll32), valid, vType);
+    //
+    // }
+
+    constructor () public {
+        constructed = 1;
+    }
+
+    function _fallback() internal {
         bytes memory input = msg.data;
 
-        // TODO: This is V.0 accepting a string (really a bytes32) of EXACTLY 32 bytes, eg a doodle poll without the https:// ;)
-        bytes32 __ownAdress;  // NB assuming 32b rather than 20b for calldata loose packing. Remember to get rid of this line when optimising!
-        bytes memory usefulData;
-        bytes32 poll32;
-        bytes memory __reveal;
-        // demo result! (we don;t need more than bool really ;)
-        uint256 valid = 7331;
 
-        (__ownAdress, usefulData) = (bytesSplit32(input));
-        (poll32, __reveal) = (bytesSplit32(usefulData));
+    }
 
-        // NB other validators will need to additionally retrieve reveal data from msg.data
-        bytes32[] memory stakers = crossContractCall (encodeFunctionName("serialiseStakers"), bytes32ToString(poll32), valid, vType);
-        bytes32[] memory proofs = crossContractCall (encodeFunctionName("serialiseProofs"), bytes32ToString(poll32), valid, vType);
+    function getMaOK() public view returns (uint8) {
+      return ok;
+    }
 
+    function setMaOK (uint8 _ok) public {
+      ok = _ok;
+    }
+
+    function getMaResult() public view returns (uint8) {
+      return result;
+    }
+
+    function setMaResult (uint8 _result) public {
+      result = _result;
+    }
+
+    function getMyMap(uint idx) public view returns (uint) {
+      return myMap[idx];
+    }
+
+    function setMyMap (uint idx, uint _myMap) public {
+      myMap[idx] = _myMap;
+    }
+
+    function getOwner() public view returns (address) {
+      return owner;
     }
 
     event pollAddressSet();
@@ -80,6 +128,11 @@ contract MutualAgreement {
         return pollAddress;
     }
 
+    function getStateVars () public view returns (uint256, uint8, string memory, address, int8) {
+        return (notes, vType, vDesc, pollAddress, constructed);
+    }
+
+
     // event RetrievedDataCache(string, uint256, bytes32[]);
     function dumpDataCache (bytes32 poll32, string memory fnName, uint8 vt) public view returns (string memory, uint256, bytes32[] memory) {
         bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
@@ -87,6 +140,12 @@ contract MutualAgreement {
         return ("Validator context", notes, dataCache[hash]);
     }
 
+    function setCache (bytes32 poll32, string memory fnName, uint8 vt, bytes32[] memory data) public {
+      bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
+      // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
+      dataCache[hash] = data;
+    }
+    
     function serialiseStakers(string calldata _poll, uint8 validationType) external pure returns (address[] memory) {
         // return something which will make it obvious that you have accidentally delegated this context!
         address[] memory ret = new address[](4);

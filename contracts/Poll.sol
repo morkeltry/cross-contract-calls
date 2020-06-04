@@ -5,11 +5,18 @@ import "./strings.sol";
 import "./stringCasting.sol";
 
 contract Poll {
+    address owner;  // is set by TokenStorage;
+    uint8 ok;
+    uint8 result;
+    mapping (uint => uint) myMap;
+
     // dataCache must occupy the same slot as in Poll contract, ie first slot, slot 0.
     mapping (bytes32 => bytes32[]) dataCache;
     // resultsCache must occupy the same slot as in Poll contract, ie second slot, slot 1.
     mapping (bytes32 => bool) resultsCache;
+
     uint256 notes = 1;
+    int8 constructed = -1;
 
     using strings for *;
     using stringcast for string;
@@ -24,6 +31,36 @@ contract Poll {
         validators[1] = address(0xA145493CC19b0BC6C5a2cA86e9BA38BB435E3F5b);
         validatorNames[1] = "Mutual Agreement";
         selfAddy = address(this);
+        constructed = 1;
+    }
+
+
+    function getPollOK() public view returns (uint8) {
+      return ok;
+    }
+
+    function setPollOK (uint8 _ok) public {
+      ok = _ok;
+    }
+
+    function getPollResult() public view returns (uint8) {
+      return result;
+    }
+
+    function setPollResult (uint8 _result) public {
+      result = _result;
+    }
+
+    function getMyMap(uint idx) public view returns (uint) {
+      return myMap[idx];
+    }
+
+    function setMyMap (uint idx, uint _myMap) public {
+      myMap[idx] = _myMap;
+    }
+
+    function getOwner() public view returns (address) {
+      return owner;
     }
 
     function() external payable {
@@ -51,7 +88,7 @@ contract Poll {
         }
         // Warning: This hack introduces possible griefing attack - better would be to force EVM to return the result of this lookup from fallback, not store and retreive it :/
 
-        storeResult(keccak256(abi.encodePacked(poll32, fnNameHash, toUint8(vType))), result, toUint8(vType));
+        storeResult(poll32, fnNameHash, result, toUint8(vType));
 
         assembly {
             let size := 256
@@ -63,6 +100,10 @@ contract Poll {
 
     function ownAddress () public view returns (address) {
         return selfAddy;
+    }
+
+    function getStateVars () public view returns (uint256, address, string memory, address, int8) {
+        return (notes, validators[1], validatorNames[1], selfAddy, constructed);
     }
 
     event ValidatorSet();
@@ -91,6 +132,12 @@ contract Poll {
         bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
         // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
         return ("Poll context:", notes, dataCache[hash]);
+    }
+
+    function setCache (bytes32 poll32, string memory fnName, uint8 vt, bytes32[] memory data) public {
+      bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
+      // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
+      dataCache[hash] = data;
     }
 
     function stringsEqual (string memory _a, string memory _b) internal pure returns (bool) {
@@ -235,9 +282,12 @@ contract Poll {
 
     }
 
-    function storeResult(bytes32 hash, bytes32 data, uint8 vType)  public {
-        uint256 notesToStore = 10000+vType;
-        if (vType == 1) {
+    function storeResult(bytes32 poll32, bytes4 fnNameHash, bytes32 data, uint8 vt)  public {
+        uint256 notesToStore = 10000+vt;
+        if (vt == 1) {
+
+            bytes32 hash = keccak256(abi.encodePacked(poll32, fnNameHash, vt));
+
             dataCache[hash] = unpackData(bytes32ToString(data));
             notesToStore=260;
         }
