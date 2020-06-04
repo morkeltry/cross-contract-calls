@@ -25,10 +25,10 @@ const SegregatedPanel = props => {
     <Col md={{ span: 8, offset: 2 }} className={"contract-form"}>
       <Row className={"form-heading"}>
         <Col md={12}>
-          <h1>{props.panelName} Contract</h1>
+          <h1>{props.panelName} functions</h1>
           <p>
-            This is the list of "{props.panelName}" type functions available on
-            your contract
+            "{props.panelName}" type functions available on
+            your { props.contractType || "" } contract
           </p>
         </Col>
       </Row>

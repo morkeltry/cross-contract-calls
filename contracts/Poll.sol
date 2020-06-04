@@ -6,15 +6,11 @@ import "./stringCasting.sol";
 
 contract Poll {
     address owner;  // is set by TokenStorage;
-    uint8 ok;
-    uint8 result;
-    mapping (uint => uint) myMap;
 
-    // dataCache must occupy the same slot as in Poll contract, ie first slot, slot 0.
-    mapping (bytes32 => bytes32[]) dataCache;
-    // resultsCache must occupy the same slot as in Poll contract, ie second slot, slot 1.
+    // allTheData must occupy the same slot as in Poll contract, ie second slot, slot 1.
+    mapping (bytes32 => bytes32[]) allTheData;
+    // resultsCache must occupy the same slot as in Poll contract, ie fourth slot, slot 3.
     mapping (bytes32 => bool) resultsCache;
-
     uint256 notes = 1;
     int8 constructed = -1;
 
@@ -35,29 +31,29 @@ contract Poll {
     }
 
 
-    function getPollOK() public view returns (uint8) {
-      return ok;
-    }
-
-    function setPollOK (uint8 _ok) public {
-      ok = _ok;
-    }
-
-    function getPollResult() public view returns (uint8) {
-      return result;
-    }
-
-    function setPollResult (uint8 _result) public {
-      result = _result;
-    }
-
-    function getMyMap(uint idx) public view returns (uint) {
-      return myMap[idx];
-    }
-
-    function setMyMap (uint idx, uint _myMap) public {
-      myMap[idx] = _myMap;
-    }
+    // function getPollOK() public view returns (uint8) {
+    //   return ok;
+    // }
+    //
+    // function setPollOK (uint8 _ok) public {
+    //   ok = _ok;
+    // }
+    //
+    // function getPollResult() public view returns (uint8) {
+    //   return result;
+    // }
+    //
+    // function setPollResult (uint8 _result) public {
+    //   result = _result;
+    // }
+    //
+    // function getMyMap(uint idx) public view returns (uint) {
+    //   return myMap[idx];
+    // }
+    //
+    // function setMyMap (uint idx, uint _myMap) public {
+    //   myMap[idx] = _myMap;
+    // }
 
     function getOwner() public view returns (address) {
       return owner;
@@ -98,46 +94,46 @@ contract Poll {
         }
     }
 
-    function ownAddress () public view returns (address) {
-        return selfAddy;
-    }
-
-    function getStateVars () public view returns (uint256, address, string memory, address, int8) {
-        return (notes, validators[1], validatorNames[1], selfAddy, constructed);
-    }
-
-    event ValidatorSet();
-    function setValidator1 (address newAddy) public returns (bool) {
-        validators[1] = newAddy;
-        emit ValidatorSet();
-        return true;
-    }
-
-    function getValidator1 () public view returns (address) {
-        return validators[1];
-    }
-
-    function setValidator1Name (string memory newName) public returns (bool) {
-        validatorNames[1] = newName;
-        emit ValidatorSet();
-        return true;
-    }
-
-    function getValidator1Name () public view returns (string memory) {
-        return validatorNames[1];
-    }
+    // function ownAddress () public view returns (address) {
+    //     return selfAddy;
+    // }
+    //
+    // function getStateVars () public view returns (uint256, address, string memory, address, int8) {
+    //     return (notes, validators[1], validatorNames[1], selfAddy, constructed);
+    // }
+    //
+    // event ValidatorSet();
+    // function setValidator1 (address newAddy) public returns (bool) {
+    //     validators[1] = newAddy;
+    //     emit ValidatorSet();
+    //     return true;
+    // }
+    //
+    // function getValidator1 () public view returns (address) {
+    //     return validators[1];
+    // }
+    //
+    // function setValidator1Name (string memory newName) public returns (bool) {
+    //     validatorNames[1] = newName;
+    //     emit ValidatorSet();
+    //     return true;
+    // }
+    //
+    // function getValidator1Name () public view returns (string memory) {
+    //     return validatorNames[1];
+    // }
 
     // event RetrievedDataCache(string, uint256, bytes32[]);
-    function dumpDataCache (bytes32 poll32, string memory fnName, uint8 vt) public view returns (string memory, uint256, bytes32[] memory) {
-        bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
-        // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
-        return ("Poll context:", notes, dataCache[hash]);
+    function retrieve (string memory _poll, string memory _fnName, uint8 _vt) public view returns (bytes32[] memory) {
+        bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
+        // emit RetrievedDataCache("Poll context:", notes, allTheData[hash]);
+        return (allTheData[hash]);
     }
 
-    function setCache (bytes32 poll32, string memory fnName, uint8 vt, bytes32[] memory data) public {
-      bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
-      // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
-      dataCache[hash] = data;
+    function set (string memory _poll, string memory _fnName, uint8 _vt, bytes32[] memory data) public {
+      bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
+      // emit RetrievedDataCache("Poll context:", notes, allTheData[hash]);
+      allTheData[hash] = data;
     }
 
     function stringsEqual (string memory _a, string memory _b) internal pure returns (bool) {
@@ -288,7 +284,7 @@ contract Poll {
 
             bytes32 hash = keccak256(abi.encodePacked(poll32, fnNameHash, vt));
 
-            dataCache[hash] = unpackData(bytes32ToString(data));
+            allTheData[hash] = unpackData(bytes32ToString(data));
             notesToStore=260;
         }
         notes += notesToStore;

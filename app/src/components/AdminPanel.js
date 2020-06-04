@@ -122,13 +122,13 @@ const AdminPanel = props => {
                 <Button
                   onClick={readClick}
                   className={ readPanelView? "pressed" : "" }
-                >Read Panel</Button>
+                >Read functions</Button>
               </Nav.Link>
               <Nav.Link>
                 <Button
                   onClick={writeClick}
                   className={ writePanelView? "pressed" : "" }
-                >Write Panel</Button>
+                >Write functions</Button>
               </Nav.Link>
             </Nav>
         </Navbar>
@@ -148,12 +148,14 @@ const AdminPanel = props => {
                       panelName={"write"}
                       form={writeForm}
                       view={writePanelView}
+                      contractType={ (currentContractAddress===nextAddresses[0]) && "POLL" }
                   />
               ) : (
                   <SegregatedPanel
                       panelName={"read"}
                       form={readForm}
                       view={readPanelView}
+                      contractType={ (currentContractAddress===nextAddresses[1]) && "VALIDATOR" }
                   />
               )}
             </Row>

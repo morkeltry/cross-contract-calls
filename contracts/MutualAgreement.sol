@@ -28,13 +28,10 @@ import "./stringCasting.sol";
 /* Lunchcoin validator contract - mutual agreement */
 contract MutualAgreement {
     address owner;  // is set by TokenStorage.
-    uint8 ok;
-    uint8 result;
-    mapping (uint => uint) myMap;
 
-    // dataCache must occupy the same slot as in Poll contract, ie first slot, slot 0.
-    mapping (bytes32 => bytes32[]) dataCache;
-    // resultsCache must occupy the same slot as in Poll contract, ie second slot, slot 1.
+    // allTheData must occupy the same slot as in Poll contract, ie second slot, slot 1.
+    mapping (bytes32 => bytes32[]) allTheData;
+    // resultsCache must occupy the same slot as in Poll contract, ie fourth slot, slot 3.
     mapping (bytes32 => bool) resultsCache;
 
     uint256 notes = 130;
@@ -88,64 +85,110 @@ contract MutualAgreement {
 
 
     }
+    //
+    // function getMaOK() public view returns (uint8) {
+    //   return ok;
+    // }
+    //
+    // function setMaOK (uint8 _ok) public {
+    //   ok = _ok;
+    // }
+    //
+    // function getMaResult() public view returns (uint8) {
+    //   return result;
+    // }
+    //
+    // function setMaResult (uint8 _result) public {
+    //   result = _result;
+    // }
+    //
+    // function getMyMap(uint idx) public view returns (uint) {
+    //   return myMap[idx];
+    // }
+    //
+    // function setMyMap (uint idx, uint _myMap) public {
+    //   myMap[idx] = _myMap;
+    // }
 
-    function getMaOK() public view returns (uint8) {
-      return ok;
-    }
-
-    function setMaOK (uint8 _ok) public {
-      ok = _ok;
-    }
-
-    function getMaResult() public view returns (uint8) {
-      return result;
-    }
-
-    function setMaResult (uint8 _result) public {
-      result = _result;
-    }
-
-    function getMyMap(uint idx) public view returns (uint) {
-      return myMap[idx];
-    }
-
-    function setMyMap (uint idx, uint _myMap) public {
-      myMap[idx] = _myMap;
-    }
-
-    function getOwner() public view returns (address) {
-      return owner;
-    }
-
-    event pollAddressSet();
-    function setPollAddress (address newAddy) public returns (bool) {
-        pollAddress = newAddy;
-        emit pollAddressSet();
-        return true;
-    }
-
-    function getPollAddress () public view returns (address) {
-        return pollAddress;
-    }
-
-    function getStateVars () public view returns (uint256, uint8, string memory, address, int8) {
-        return (notes, vType, vDesc, pollAddress, constructed);
-    }
-
+    // function getOwner() public view returns (address) {
+    //   return owner;
+    // }
+    //
+    // event pollAddressSet();
+    // function setPollAddress (address newAddy) public returns (bool) {
+    //     pollAddress = newAddy;
+    //     emit pollAddressSet();
+    //     return true;
+    // }
+    //
+    // function getPollAddress () public view returns (address) {
+    //     return pollAddress;
+    // }
+    //
+    // function getStateVars () public view returns (uint256, uint8, string memory, address, int8) {
+    //     return (notes, vType, vDesc, pollAddress, constructed);
+    // }
 
     // event RetrievedDataCache(string, uint256, bytes32[]);
-    function dumpDataCache (bytes32 poll32, string memory fnName, uint8 vt) public view returns (string memory, uint256, bytes32[] memory) {
-        bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
-        // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
-        return ("Validator context", notes, dataCache[hash]);
+    function retrieve (string memory _poll, string memory _fnName, uint8 _vt) public view returns (bytes32[] memory) {
+        bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
+        // emit RetrievedDataCache("Poll context:", notes, allTheData[hash]);
+        return (allTheData[hash]);
     }
 
-    function setCache (bytes32 poll32, string memory fnName, uint8 vt, bytes32[] memory data) public {
-      bytes32 hash = keccak256(abi.encodePacked(poll32, encodeFunctionName(fnName), vt));
-      // emit RetrievedDataCache("Poll context:", notes, dataCache[hash]);
-      dataCache[hash] = data;
+    function set (string memory _poll, string memory _fnName, uint8 _vt, bytes32[] memory data) public {
+      bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
+      // emit RetrievedDataCache("Poll context:", notes, allTheData[hash]);
+      allTheData[hash] = data;
     }
-    
+
+
+    /* simplest possible validator - checks that a majority of poll.stakers(), including sender, are contained in poll.serialiseProofs() */
+    function validate(address _pollContract, string memory _poll, bytes32 _reveal) public view returns (bool success) {
+        // bytes32[] memory stakersData = crossContractCall( encodeFunctionName("serialiseStakers") , _poll, vType);
+        // bytes32[] memory proofsData = crossContractCall( encodeFunctionName("serialiseProofs") , _poll, vType);
+        // bytes32[] memory thresholdData =  crossContractCall( encodeFunctionName("threshold") , _poll, vType);
+
+        // address[] memory stakers = splitToAddresses( bytes32ArrayToString(stakersData).toSlice());
+        // address[] memory proofs = splitToAddresses( bytes32ArrayToString(proofsData).toSlice());
+        // uint8 threshold = uint8(bytes32ToUint(thresholdData[0]));
+
+
+        // bytes32[] memory stakersData = crossContractCall( encodeFunctionName("serialiseStakers") , _poll, vType);
+        // bytes32[] memory proofsData = crossContractCall( encodeFunctionName("serialiseProofs") , _poll, vType);
+        // bytes32[] memory thresholdData =  crossContractCall( encodeFunctionName("threshold") , _poll, vType);
+        bytes32[] memory rawStakers = retrieve(_poll, "serialiseStakers", vType);
+        bytes32[] memory rawProofs = retrieve(_poll, "serialiseProofs", vType);
+
+        address[] memory stakers = splitToAddresses( bytes32ArrayToString(rawStakers));
+        address[] memory proofs = splitToAddresses( bytes32ArrayToString(rawProofs));
+        uint8 threshold = 3;
+
+        proofCounter memory pc;
+
+        for(uint i = 0; i < proofs.length; i++) {
+            pc.duplicateProofs = -1;
+            for(uint j = 0; i < stakers.length; i++) {
+                if (proofs[i] == stakers[j]) {
+                    // Only set senderIsPresent = true the first time that proofs[i] == stakers[j] == msg.sender
+                    if (proofs[i] == msg.sender) { pc.senderIsPresent = true; }
+                    // set duplicateProofs hopefully to 0, and remove staker from the array
+                    pc.duplicateProofs++;
+                    stakers[j] = address(0);
+                }
+            }
+            if (pc.duplicateProofs>0) { pc.fakeProofs += uint8(pc.duplicateProofs); }
+        }
+
+        // // deal with 0 < threshold < 1
+        // if(percentageThreshold>0) {
+        //   threshold = percentageThreshold*stakers.length;
+        // }
+        if (pc.senderIsPresent && proofs.length-pc.fakeProofs >= threshold) {
+            return true;
+        }
+    }
+
     function serialiseStakers(string calldata _poll, uint8 validationType) external pure returns (address[] memory) {
         // return something which will make it obvious that you have accidentally delegated this context!
         address[] memory ret = new address[](4);
@@ -176,16 +219,49 @@ contract MutualAgreement {
 
     // split a serialised string of addresses (as received from main contract).
     // NB - only works in this validator - other validators will use multiple types within serialised string
-    function splitToAddresses(strings.slice memory concatenated) internal pure returns (address[] memory result) {
+    function splitToAddresses(string memory _concatenated) internal pure returns (address[] memory result) {
         strings.slice memory delim = ",".toSlice();
-        address[] memory parts = new address[](concatenated.count(delim));
+        strings.slice memory source = _concatenated.toSlice();
+        address[] memory parts = new address[](source.count(delim));
 
         for(uint i = 0; i < parts.length; i++) {
-           parts[i] = concatenated.split(delim).toString().toAddress();
+           parts[i] = source.split(delim).toString().toAddress();
         }
         return parts;
 
     }
+
+    function toString(address account) public pure returns(string memory) {
+        return toString(abi.encodePacked(account), 5);
+    }
+
+    function toString(uint256 value) public pure returns(string memory) {
+        return toString(abi.encodePacked(value), 0);
+    }
+
+    function toString(bytes32 value) public pure returns(string memory) {
+        return toString(abi.encodePacked(value), 0);
+    }
+
+    function toString(bytes memory data, uint16 len) public pure returns(string memory) {
+        bytes memory alphabet = "0123456789abcdef";
+        uint16 strLen = 20;  // It's 20. The length is just fucking 20.  uint16(data.length);
+        // Pretty simple if statement - why won't it work ?
+        // if (len>0) {
+        //     strLen = len;
+        // }
+
+
+        bytes memory str = new bytes(2 + strLen * 2);
+        str[0] = '0';
+        str[1] = 'x';
+        for (uint i = 0; i < strLen; i++) {
+            str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
+            str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
+        }
+        return string(str);
+    }
+
 
     function bytes32ToBytes(bytes32 _bytes32) public pure returns (bytes memory){
         // string memory str = string(_bytes32);
@@ -285,49 +361,4 @@ contract MutualAgreement {
         emit CrossContractValidateEnd();
     }
 
-
-    /* simplest possible validator - checks that a majority of poll.stakers(), including sender, are contained in poll.serialiseProofs() */
-    function validate(address _pollContract, string memory _poll, bytes32 _reveal) public payable returns (bool success) {
-        // bytes32[] memory stakersData = crossContractCall( encodeFunctionName("serialiseStakers") , _poll, vType);
-        // bytes32[] memory proofsData = crossContractCall( encodeFunctionName("serialiseProofs") , _poll, vType);
-        // bytes32[] memory thresholdData =  crossContractCall( encodeFunctionName("threshold") , _poll, vType);
-
-        // address[] memory stakers = splitToAddresses( bytes32ArrayToString(stakersData).toSlice());
-        // address[] memory proofs = splitToAddresses( bytes32ArrayToString(proofsData).toSlice());
-        // uint8 threshold = uint8(bytes32ToUint(thresholdData[0]));
-
-
-        // bytes32[] memory stakersData = crossContractCall( encodeFunctionName("serialiseStakers") , _poll, vType);
-        // bytes32[] memory proofsData = crossContractCall( encodeFunctionName("serialiseProofs") , _poll, vType);
-        // bytes32[] memory thresholdData =  crossContractCall( encodeFunctionName("threshold") , _poll, vType);
-
-        address[] memory stakers = splitToAddresses( bytes32ArrayToString( crossContractCall( encodeFunctionName("serialiseStakers") , _poll, 12341234, vType) ).toSlice());
-        address[] memory proofs = splitToAddresses( bytes32ArrayToString( crossContractCall( encodeFunctionName("serialiseProofs") , _poll, 12341234, vType) ).toSlice());
-        // uint8 threshold = uint8(bytes32ToUint( crossContractCall( encodeFunctionName("threshold") , _poll, 12341234, vType)[0]));
-        uint8 threshold = 3;
-
-        proofCounter memory pc;
-
-        for(uint i = 0; i < proofs.length; i++) {
-            pc.duplicateProofs = -1;
-            for(uint j = 0; i < stakers.length; i++) {
-                if (proofs[i] == stakers[j]) {
-                    // Only set senderIsPresent = true the first time that proofs[i] == stakers[j] == msg.sender
-                    if (proofs[i] == msg.sender) { pc.senderIsPresent = true; }
-                    // set duplicateProofs hopefully to 0, and remove staker from the array
-                    pc.duplicateProofs++;
-                    stakers[j] = address(0);
-                }
-            }
-            if (pc.duplicateProofs>0) { pc.fakeProofs += uint8(pc.duplicateProofs); }
-        }
-
-        // // deal with 0 < threshold < 1
-        // if(percentageThreshold>0) {
-        //   threshold = percentageThreshold*stakers.length;
-        // }
-        if (pc.senderIsPresent && proofs.length-pc.fakeProofs >= threshold) {
-            return true;
-        }
-    }
 }
