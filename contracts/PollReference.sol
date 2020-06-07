@@ -4,30 +4,55 @@ import "./strings.sol";
 // import "github.com/GNSPS/solidity-bytes-utils/contracts/BytesLib.sol";   // requires sol 0.5+
 import "./stringCasting.sol";
 
-contract Poll {
-    address owner;  // is set by TokenStorage;
+contract PollReference {
+    // Common storage structure for ALL contacts using this storage.
+    // _, __, __ , etc are unused in this contract, but must remain to occupy their slots.
 
-    // allTheData must occupy the same slot as in Poll contract, ie second slot, slot 1.
+    address owner;  // is set by TokenStorage.. but retain types and order.
+
+    struct timeRange {
+      uint start;
+      uint end;
+    }
+
+    struct stake {
+      uint rep;
+      timeRange[] available;
+      uint availabilityExpires;
+    }
+
+    struct Poll {
+      address initiator;
+      uint minStake;
+      uint venueCost;
+      uint8 minParticipants;
+      timeRange eventTime;
+      mapping (address => stake) staked;
+      mapping (address => bytes32[]) committedProofs;
+    }
+
+    // shared across contracts
     mapping (bytes32 => bytes32[]) allTheData;
-    // resultsCache must occupy the same slot as in Poll contract, ie fourth slot, slot 3.
     mapping (bytes32 => bool) resultsCache;
-    uint256 notes = 1;
-    int8 constructed = -1;
 
-    using strings for *;
-    using stringcast for string;
-
-
-
+    // used only in Poll
     mapping(uint8 => address) public validators;
     mapping(uint8 => string) public validatorNames;
     address selfAddy ;
+    int flag;
+
+    // unused - previously for Storage Proxy
+    //    mapping (address => bool) internal _allowedAccess;
+
+
+    using strings for *;
+    using stringcast for string;
 
     constructor () public /* is PollCommunity */ {
         validators[1] = address(0xA145493CC19b0BC6C5a2cA86e9BA38BB435E3F5b);
         validatorNames[1] = "Mutual Agreement";
         selfAddy = address(this);
-        constructed = 1;
+        // constructed = 1;
     }
 
 
@@ -57,6 +82,14 @@ contract Poll {
 
     function getOwner() public view returns (address) {
       return owner;
+    }
+
+    function getFlag() public view returns (int) {
+      return flag;
+    }
+
+    function setFlag(int _flag) public {
+      flag = _flag;
     }
 
     function() external payable {
@@ -132,8 +165,24 @@ contract Poll {
 
     function set (string memory _poll, string memory _fnName, uint8 _vt, bytes32[] memory data) public {
       bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
-      // emit RetrievedDataCache("Poll context:", notes, allTheData[hash]);
       allTheData[hash] = data;
+    }
+
+    function justSetStuff() public returns (string memory ace) {
+      bytes32 b1 = bytes32(0x71776572747975696f706173646667686a6b6c7a786376626e6d313233343536);
+      bytes32[] memory inp1;
+      bytes32[] memory inp2;
+      inp1[0] = b1;
+      inp1[0] = b1;
+      inp2[1] = b1;
+      inp2[1] = b1;
+      set ("doodle.com/poll/h7phtw5u2thhz9k4", "serialiseStakers", 1, inp1);
+      set ("doodle.com/poll/h7phtw5u2thhz9k4", "serialiseProofs", 1, inp2);
+    }
+
+    function add (string memory _poll, string memory _fnName, uint8 _vt, address newMember) public {
+      bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
+      allTheData[hash].push (bytes32(bytes20(newMember)));
     }
 
     function stringsEqual (string memory _a, string memory _b) internal pure returns (bool) {
@@ -158,12 +207,13 @@ contract Poll {
 
     // split a serialised string of addresses (as received from main contract).
     // NB - only works in mutual agreement validator - other validators will use multiple types within serialised string
-    function splitToAddresses(strings.slice memory concatenated) internal pure returns (address[] memory result) {
+    function splitToAddresses(string memory source) public pure returns (address[] memory result) {
+        strings.slice memory packed = source.toSlice();
         strings.slice memory delim = ",".toSlice();
-        address[] memory parts = new address[](concatenated.count(delim));  // why doesn't this lose a member?
+        address[] memory parts = new address[](packed.count(delim)+1);  // why doesn't this lose a member?
 
         for(uint i = 0; i < parts.length; i++) {
-           parts[i] = concatenated.split(delim).toString().toAddress();
+           parts[i] = packed.split(delim).toString().toAddress();
         }
         return parts;
     }
@@ -265,29 +315,27 @@ contract Poll {
     }
 
     // temporary functionality to repoint to simple example, eg splitToAddresses
-    function unpackData (string memory packed) internal pure returns (bytes32[] memory result) {
+    function unpackData (string memory packed) public pure returns (bytes32[] memory result) {
         //NB relying on splitToAddresses doing string splitting here, as we rely on .length - available only on fixed size array.
-        address[] memory asAddresses = splitToAddresses(packed.toSlice()) ;
+        address[] memory asAddresses = splitToAddresses(packed) ;
         uint8 i = uint8(asAddresses.length) ;
 
         while (i-- > 0) {
             result[i] = bytes32(bytes20(asAddresses[i]));
         }
         return result;
-
-
     }
 
     function storeResult(bytes32 poll32, bytes4 fnNameHash, bytes32 data, uint8 vt)  public {
-        uint256 notesToStore = 10000+vt;
+        // uint256 notesToStore = 10000+vt;
         if (vt == 1) {
 
             bytes32 hash = keccak256(abi.encodePacked(poll32, fnNameHash, vt));
 
             allTheData[hash] = unpackData(bytes32ToString(data));
-            notesToStore=260;
+            // notesToStore=260;
         }
-        notes += notesToStore;
+        // notes += notesToStore;
     }
 
     function serialiseStakers(string memory _poll, uint8 validationType) public view returns (string memory) {
@@ -299,7 +347,7 @@ contract Poll {
         string memory result = "Result! - from poll.serialiseProofs";
     }
 
-    function validate(address _pollContract, string memory _poll, bytes32 _reveal) public payable returns (bool success) {
+    function xcValidate(address _pollContract, string memory _poll, bytes32 _reveal) public payable returns (bool success) {
     }
 
         // calls fallback function of contract at validatorAddress, passing 4 byte encoded function name to it to select method.
@@ -335,7 +383,7 @@ contract Poll {
         bytes32[] memory empty;
 
         // reveal parameter is unused in mutual agreement
-        validate(validators[vType], _poll, bytes32(0) );
+        xcValidate(validators[vType], _poll, bytes32(0) );
         crossContractValidateCall(validators[vType], encodeFunctionName("validate") , _poll, vType, empty );
         //TODO: get return value!
 

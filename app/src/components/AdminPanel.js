@@ -16,7 +16,7 @@ import "../App.scss";
 const readFormArray = [];
 const writeFormArray = [];
 const eventsObj = {};
-const readPanelViewBoolean = false;
+const readPanelViewBoolean = true;
 const writePanelViewBoolean = true;
 
 const AdminPanel = props => {
@@ -143,14 +143,15 @@ const AdminPanel = props => {
             <Loading heading={"Loading Contract..."}/>
         ) : (
             <Row>
-              {!readPanelView ? (
+              { writePanelView && (
                   <SegregatedPanel
                       panelName={"write"}
                       form={writeForm}
                       view={writePanelView}
                       contractType={ (currentContractAddress===nextAddresses[0]) && "POLL" }
                   />
-              ) : (
+              )}
+              { readPanelView && (
                   <SegregatedPanel
                       panelName={"read"}
                       form={readForm}

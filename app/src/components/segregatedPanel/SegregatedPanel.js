@@ -8,6 +8,7 @@ import "./segregatedPanel.scss";
 import Row from "react-bootstrap/Row";
 
 import FunctionForm from "./FunctionForm";
+import { doNotShowFuncs } from './formConfig'
 
 const SegregatedPanel = props => {
   const getFunctionDetails = functionName => {
@@ -21,6 +22,9 @@ const SegregatedPanel = props => {
     return functionDetails.args.length !== 0;
   };
 
+  const blacklist = formFunction=>
+    !doNotShowFuncs[formFunction.funcName] ;
+
   return (
     <Col md={{ span: 8, offset: 2 }} className={"contract-form"}>
       <Row className={"form-heading"}>
@@ -33,7 +37,9 @@ const SegregatedPanel = props => {
         </Col>
       </Row>
 
-      {props.form.map((formFunction, key) => {
+      {props.form
+        .filter(blacklist)
+        .map((formFunction, key) => {
         return (
           <Row key={key + formFunction.funcName} className={"function-form"}>
               <FunctionForm

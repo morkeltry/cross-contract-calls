@@ -2,7 +2,7 @@ import Web3 from "web3";
 import TokenProxyArtifacts from "../contracts/TokenProxy.json";
 import TokenV0Artifacts from "../contracts/Token_V0.json";
 import TokenV1Artifacts from "../contracts/Token_V1.json";
-import PollArtifacts from "../contracts/Poll.json";
+import PollArtifacts from "../contracts/PollReference.json";
 import ValidatorArtifacts from "../contracts/MutualAgreement.json";
 
 let providerUrl = "ws://127.0.0.1:8545";
@@ -179,8 +179,8 @@ export async function setEventWatcher(event, action) {
         return;
       }
       // console.log(result.args._value);
-      console.log(result);
-      console.log('returning:',result.returnValues);
+      // console.log(result);
+      console.log('Event returning:',result.returnValues);
     });
     console.log(`Will set watch on ${event} with ${action.toString()}`);
     console.log(`IMPLEMENTATION_INSTANCE.events[${event}]()`,IMPLEMENTATION_INSTANCE.events[event]);

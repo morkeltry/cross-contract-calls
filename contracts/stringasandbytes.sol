@@ -155,7 +155,7 @@ contract StringsAndBytes {
         }
         return string(s);
     } //
-    function char(byte b)  public returns (byte c) {
+    function char(byte b)  public pure returns (byte c) {
         if (uint8(b) < 10) return byte(uint8(b) + 0x30);
         else return byte(uint8(b) + 0x57);
     }
@@ -182,7 +182,7 @@ contract StringsAndBytes {
 
     struct slice {uint _len; uint _ptr;}
 
-    function memcpy(uint dest, uint src, uint len) private {
+    function memcpy(uint dest, uint src, uint len) private pure {
         for (; len >= 32; len -= 32) {
             assembly {
             mstore(dest, mload(src))
@@ -203,7 +203,7 @@ contract StringsAndBytes {
      * @param self The string to make a slice from.
      * @return A newly allocated slice containing the entire string.
      */
-    function toSlice(string memory self) internal returns (slice memory) {
+    function toSlice(string memory self) internal pure returns (slice memory) {
         uint ptr;
         assembly {
         ptr := add(self, 0x20)

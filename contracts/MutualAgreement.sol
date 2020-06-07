@@ -7,7 +7,7 @@ import "./stringCasting.sol";
 
 /* empty contract - the real one is depolyed at an address which will be passed as param to validate */
 
-// contract Poll {
+// contract PollReference {
 //     function serialiseStakers(string calldata _poll, uint8 validationType) external returns (address[] memory) {
 //         // return something which will make it obvious that you have accidentally delegated this context!
 //         address[] memory ret = new address[](3);
@@ -27,22 +27,56 @@ import "./stringCasting.sol";
 
 /* Lunchcoin validator contract - mutual agreement */
 contract MutualAgreement {
-    address owner;  // is set by TokenStorage.
+    // Common storage structure for ALL contacts using this storage.
+    // _, __, __ , etc are unused in this contract, but must remain to occupy their slots.
 
-    // allTheData must occupy the same slot as in Poll contract, ie second slot, slot 1.
+    address owner;  // is set by TokenStorage.. but retain types and order.
+
+    struct timeRange {
+      uint start;
+      uint end;
+    }
+
+    struct stake {
+      uint rep;
+      timeRange[] available;
+      uint availabilityExpires;
+    }
+
+    struct Poll {
+      address initiator;
+      uint minStake;
+      uint venueCost;
+      uint8 minParticipants;
+      timeRange eventTime;
+      mapping (address => stake) staked;
+      mapping (address => bytes32[]) committedProofs;
+    }
+
+    // shared across contracts
     mapping (bytes32 => bytes32[]) allTheData;
-    // resultsCache must occupy the same slot as in Poll contract, ie fourth slot, slot 3.
     mapping (bytes32 => bool) resultsCache;
 
-    uint256 notes = 130;
-    int8 constructed = -1;
+    // used only in Poll
+    mapping(uint8 => address) public __validators;
+    mapping(uint8 => string) public __validatorNames;
+    address __selfAddy ;
 
-    using strings for *;
-    using stringcast for string;
 
+    int160 flag;
+
+    // unused - previously for Storage Proxy
+    //    mapping (address => bool) internal _allowedAccess;
+
+    // used only in Validators
+
+      // used for testing only - will be deleted.
+      address pollAddress = 0x9D26a8a5Db7dC10689692caF8d52C912958409CF;
+
+    // constants: Do not use space in storage.
     uint8 constant vType=1;
     string constant vDesc = "mutual agreement";
-    address pollAddress = 0x9D26a8a5Db7dC10689692caF8d52C912958409CF;
+
 
     struct proofCounter {
         bool fakeProof;
@@ -50,6 +84,10 @@ contract MutualAgreement {
         uint8 fakeProofs;
         bool senderIsPresent;
     }
+
+
+    using strings for *;
+    using stringcast for string;
 
     function () payable external {
         _fallback();
@@ -77,7 +115,9 @@ contract MutualAgreement {
     // }
 
     constructor () public {
-        constructed = 1;
+        // testing constructor access to storage across shared storage
+        // (one for later ;)
+        // constructed = 1;
     }
 
     function _fallback() internal {
@@ -129,7 +169,21 @@ contract MutualAgreement {
     //     return (notes, vType, vDesc, pollAddress, constructed);
     // }
 
-    // event RetrievedDataCache(string, uint256, bytes32[]);
+    event logStuff (string);
+
+    function doEmit (string memory message) public {
+      emit logStuff (message);
+    }
+
+    function getFlag() public view returns (int) {
+      return flag;
+    }
+
+    function setFlag(int160 _flag) public {
+      flag = _flag;
+    }
+
+    event RetrievedDataCache(string, uint256, bytes32[]);
     function retrieve (string memory _poll, string memory _fnName, uint8 _vt) public view returns (bytes32[] memory) {
         bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
         // emit RetrievedDataCache("Poll context:", notes, allTheData[hash]);
@@ -138,43 +192,68 @@ contract MutualAgreement {
 
     function set (string memory _poll, string memory _fnName, uint8 _vt, bytes32[] memory data) public {
       bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
-      // emit RetrievedDataCache("Poll context:", notes, allTheData[hash]);
+      emit RetrievedDataCache("Validator context:", 424242, allTheData[hash]);
       allTheData[hash] = data;
     }
 
+    function add (string memory _poll, string memory _fnName, uint8 _vt, address newMember) public {
+      bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
+      allTheData[hash].push (bytes32(bytes20(newMember)));
+    }
 
+    function setString (string memory _poll, string memory _fnName, uint8 _vt, string memory data) public {
+      bytes32 hash = keccak256(abi.encodePacked(_poll, encodeFunctionName(_fnName), _vt));
+      // emit RetrievedDataCache("Poll context:", notes, allTheData[hash]);
+      allTheData[hash] = stringToBytes32Array(data);
+    }
+
+    event whatTheFuck (string, uint16, uint, address, address, address);
+    event cool (uint16, uint);
+    event numberLoggerLikeImUsingFuckingJava (string, uint);
     /* simplest possible validator - checks that a majority of poll.stakers(), including sender, are contained in poll.serialiseProofs() */
-    function validate(address _pollContract, string memory _poll, bytes32 _reveal) public view returns (bool success) {
-        // bytes32[] memory stakersData = crossContractCall( encodeFunctionName("serialiseStakers") , _poll, vType);
-        // bytes32[] memory proofsData = crossContractCall( encodeFunctionName("serialiseProofs") , _poll, vType);
-        // bytes32[] memory thresholdData =  crossContractCall( encodeFunctionName("threshold") , _poll, vType);
+    function validate(address _pollContract, string memory _poll, bytes32 _reveal) public view returns (bool) {
+        // require (_pollContract==howeverYoullIdentifySelf, 'wrong Poll contract - something needs upgrading');
 
-        // address[] memory stakers = splitToAddresses( bytes32ArrayToString(stakersData).toSlice());
-        // address[] memory proofs = splitToAddresses( bytes32ArrayToString(proofsData).toSlice());
-        // uint8 threshold = uint8(bytes32ToUint(thresholdData[0]));
-
-
-        // bytes32[] memory stakersData = crossContractCall( encodeFunctionName("serialiseStakers") , _poll, vType);
-        // bytes32[] memory proofsData = crossContractCall( encodeFunctionName("serialiseProofs") , _poll, vType);
-        // bytes32[] memory thresholdData =  crossContractCall( encodeFunctionName("threshold") , _poll, vType);
         bytes32[] memory rawStakers = retrieve(_poll, "serialiseStakers", vType);
         bytes32[] memory rawProofs = retrieve(_poll, "serialiseProofs", vType);
 
-        address[] memory stakers = splitToAddresses( bytes32ArrayToString(rawStakers));
-        address[] memory proofs = splitToAddresses( bytes32ArrayToString(rawProofs));
-        uint8 threshold = 3;
+        // address[] memory stakers = splitToAddresses( bytes32ArrayToString(rawStakers));
+        // address[] memory proofs = splitToAddresses( bytes32ArrayToString(rawProofs));
+
+        address[] memory stakers = new address[](rawStakers.length);
+        address[] memory proofs = new address[](rawProofs.length);
+        uint16 i;
+
+        for(i = 0; i < rawStakers.length; i++) {
+            stakers[i] = bytesToAddress(bytes32ToBytes(rawStakers[i]));
+        }
+        for(i = 0; i < rawProofs.length; i++) {
+            proofs[i] = bytesToAddress(bytes32ToBytes(rawProofs[i]));
+        }
+        uint8 threshold = 1 ;
+        // emit numberLoggerLikeImUsingFuckingJava('stakers',stakers.length);
+        // emit numberLoggerLikeImUsingFuckingJava('proofs',proofs.length);
 
         proofCounter memory pc;
-
-        for(uint i = 0; i < proofs.length; i++) {
+        // emit logStuff("am alive");
+        for(i = 0; i < proofs.length; i++) {
+            // emit logStuff("started loop");
             pc.duplicateProofs = -1;
-            for(uint j = 0; i < stakers.length; i++) {
+            for(uint j = 0; j < stakers.length; j++) {
+                // emit whatThe ("Huh?",i,j,proofs[i], stakers[j], msg.sender);
                 if (proofs[i] == stakers[j]) {
+                    // emit cool (i,j);
                     // Only set senderIsPresent = true the first time that proofs[i] == stakers[j] == msg.sender
-                    if (proofs[i] == msg.sender) { pc.senderIsPresent = true; }
+                    // if (proofs[i] == msg.sender) {
+                    if (proofs[i] == msg.sender) {
+                      pc.senderIsPresent = true;
+                      // emit logStuff("found sender");
+                      // flag = int160(1000*i+j);
+                    }
                     // set duplicateProofs hopefully to 0, and remove staker from the array
                     pc.duplicateProofs++;
                     stakers[j] = address(0);
+                    // emit logStuff("loop");
                 }
             }
             if (pc.duplicateProofs>0) { pc.fakeProofs += uint8(pc.duplicateProofs); }
@@ -184,9 +263,27 @@ contract MutualAgreement {
         // if(percentageThreshold>0) {
         //   threshold = percentageThreshold*stakers.length;
         // }
-        if (pc.senderIsPresent && proofs.length-pc.fakeProofs >= threshold) {
-            return true;
-        }
+        // if (pc.senderIsPresent && (proofs.length-pc.fakeProofs >= threshold)) {
+        //     return true;
+        // }
+        // return false;
+
+        if (!pc.senderIsPresent)
+            revert('Sender did not register attendance');
+        if (proofs.length-pc.fakeProofs < threshold)
+            revert('Not enough attendees in consensus');
+        if (proofs.length == pc.fakeProofs)
+            revert('All proofs were fake');
+
+        // if (!pc.senderIsPresent)
+        //     emit logStuff('Sender did not register attendance');
+        // if (proofs.length-pc.fakeProofs < threshold)
+        //     emit logStuff('Not enough attendees in consensus');
+        // if (proofs.length == pc.fakeProofs)
+        //     emit logStuff('All proofs were fake');
+        // emit numberLoggerLikeImUsingFuckingJava ('fakeProofs',pc.fakeProofs);
+        // emit numberLoggerLikeImUsingFuckingJava ('proofs.length',proofs.length);
+        return true;
     }
 
     function serialiseStakers(string calldata _poll, uint8 validationType) external pure returns (address[] memory) {
@@ -229,6 +326,14 @@ contract MutualAgreement {
         }
         return parts;
 
+    }
+
+    function bytesToAddress(bytes memory _bytes) public pure returns (address) {
+      address tempAddress;
+      assembly {
+          tempAddress := div(mload(add(add(_bytes, 0x20), 0)), 0x1000000000000000000000000)
+      }
+      return tempAddress;
     }
 
     function toString(address account) public pure returns(string memory) {
@@ -313,6 +418,20 @@ contract MutualAgreement {
             bytesStringTrimmed[i] = bytesString[i];
         }
         return string(bytesStringTrimmed);
+    }
+
+    function stringToBytes32Array(string memory source) public pure returns (bytes32[] memory result) {
+        // uint16 words = uint16( (bytes(source).length+31)/32 );
+        uint16 words = 1;
+        for(uint16 i=0; i<=words; i++) {
+          uint16 offset = 32*(i+1);
+          bytes32 word;
+          assembly {
+            word := mload(add(source, offset))
+          }
+          result[i] = word;
+        }
+        return result;
     }
 
     // TODO !!!

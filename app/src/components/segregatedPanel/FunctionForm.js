@@ -6,6 +6,7 @@ import Button from "react-bootstrap/Button";
 
 import { callTransaction, sendTransaction } from "../../Web3/adminPanel";
 
+import { globalDefaults, byFuncDefaults } from './formConfig'
 import "./functionForm.css";
 import "./segregatedPanel.scss";
 
@@ -47,7 +48,7 @@ const FunctionForm = props => {
         Object.keys(args).forEach(ele => {
           objToBePassed[ele.split(" ")[0]] = args[ele];
         });
-        console.log(objToBePassed);
+        console.log('Input:', objToBePassed);
 
         callTransaction(functionName, objToBePassed)
           .then(response => {
@@ -104,6 +105,11 @@ const FunctionForm = props => {
     });
   };
 
+  const defaultVal = (func, arg) => {
+    arg = arg.split(' ')[0];
+    return (byFuncDefaults[func] && byFuncDefaults[func][arg]) || globalDefaults[arg]
+  }
+
   const onFieldChange = (e, argumentName) => {
     let tempState = args;
     if (e.target.value === "") delete tempState[argumentName];
@@ -145,9 +151,13 @@ const FunctionForm = props => {
                 key={argsKey}
                 type={"text"}
                 placeholder={"argument(type):  " + arg}
+                defaultValue={defaultVal(props.funcName,arg)}
                 required
                 className={"function-arg"}
                 onChange={e => {
+                  onFieldChange(e, arg);
+                }}
+                onClick={e => {
                   onFieldChange(e, arg);
                 }}
               />

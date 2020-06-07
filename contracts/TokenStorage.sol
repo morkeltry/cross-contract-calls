@@ -10,17 +10,55 @@ import './Ownable.sol';
 contract TokenStorage  is Ownable{
     using SafeMath for uint256;
 
-    //    mapping (address => bool) internal _allowedAccess;
+    // Common storage structure for ALL contacts using this storage.
+    // Rename identifiers, eg to _, __, __ , etc. but retain types and order.
 
     // Access Modifier for Storage contract
     address internal _registryContract;
 
-    // dataCache must occupy the same slot as in Poll contract, ie second slot, slot 1.
-    mapping (bytes32 => bytes32[]) dataCache1;
-    // dataCache must occupy the same slot as in Poll contract, ie third slot, slot 2.
-    mapping (bytes32 => bytes32[]) dataCache2;
-    // resultsCache must occupy the same slot as in Poll contract, ie fourth slot, slot 3.
+    struct timeRange {
+      uint start;
+      uint end;
+    }
+
+    struct stake {
+      uint rep;
+      timeRange[] available;
+      uint availabilityExpires;
+    }
+
+    struct Poll {
+      address initiator;
+      uint minStake;
+      uint venueCost;
+      uint8 minParticipants;
+      timeRange eventTime;
+      mapping (address => stake) staked;
+      mapping (address => bytes32[]) committedProofs;
+    }
+
+    // shared across contracts
+    mapping (bytes32 => bytes32[]) allTheData;
     mapping (bytes32 => bool) resultsCache;
+
+    // used only in Poll
+    mapping(uint8 => address) public __validators;
+    mapping(uint8 => string) public __validatorNames;
+    address __selfAddy ;
+
+    // unused - previously for Storage Proxy
+    //    mapping (address => bool) internal _allowedAccess;
+
+    // used only in Validators
+    int flag;
+
+      // used for testing only - will be deleted.
+      address __pollAddress = 0x9D26a8a5Db7dC10689692caF8d52C912958409CF;
+
+    // constants: Do not use space in storage.
+    uint8 constant __vType=1;
+    string constant __vDesc = "mutual agreement";
+
 
     constructor() public {
         _owner = msg.sender;

@@ -2,7 +2,7 @@
 @author Arvind Kalra (github.com/arvindkalra) and Pranav Singhal (github.com/pranav-singhal)
 */
 
-const Poll = artifacts.require("./Poll.sol");
+const Poll = artifacts.require("./PollReference.sol");
 const Validator = artifacts.require("./MutualAgreement.sol");
 
 module.exports = async function(deployer, network, accounts) {
@@ -15,9 +15,9 @@ module.exports = async function(deployer, network, accounts) {
     // poll["setValidator1"](Validator.address).then(() => {
       Validator.at(Validator.address).then(validator => {
         console.log(`We have Validator at ${Validator.address}`);
-        validator["setPollAddress"](Poll.address).then(() => {
+        // validator["setPollAddress"](Poll.address).then(() => {
           console.log("That's a done :)");
-        });
+        // });
       });
     // });
   });
